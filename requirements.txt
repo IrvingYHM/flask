@@ -1,6 +1,6 @@
 blinker==1.8.2
 clik==8.1.7
-colorama=0.4.6
+colorama==0.4.6
 Flask==3.0.3
 itsdangerous==2.2.0
 gunicorn==22.0.0
