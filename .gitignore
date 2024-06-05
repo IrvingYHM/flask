@@ -1,0 +1,11 @@
+#ignore virtual environtment 
+myenv/ 
+
+*ignore Python cache Files 
+_pycache_,' 
+
+*ignore MacOs specific files 
+. DS Stone 
+
+*Ignore environtment variables files 
+. venv 
