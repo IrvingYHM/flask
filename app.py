@@ -1,16 +1,15 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, jsonify, render_template
 import joblib
 import pandas as pd
-import logging
 
 app = Flask(__name__)
 
-# Configurar el registro
-logging.basicConfig(level=logging.DEBUG)
-
 # Cargar el modelo entrenado
-model = joblib.load('model.pkl')
-app.logger.debug('Modelo cargado correctamente.')
+try:
+    modelo = joblib.load("modelo_apple_quality.pkl")
+except Exception as e:
+    modelo = None
+    print(f"Error al cargar el modelo: {e}")
 
 @app.route('/')
 def home():
@@ -18,25 +17,28 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    if modelo is None:
+        return jsonify({'error': 'El modelo no está disponible.'}), 500
+
     try:
-        # Obtener los datos enviados en el request
-        abdomen = float(request.form['abdomen'])
-        antena = float(request.form['antena'])
+        data = request.get_json()
+        # Crear el DataFrame con los datos recibidos
+        X_test = pd.DataFrame(data)
         
-        # Crear un DataFrame con los datos
-        data_df = pd.DataFrame([[abdomen, antena]], columns=['abdomen', 'antena'])
-        app.logger.debug(f'DataFrame creado: {data_df}')
+        # Realizar la predicción
+        prediction = modelo.predict(X_test)
         
-        # Realizar predicciones
-        prediction = model.predict(data_df)
-        app.logger.debug(f'Predicción: {prediction[0]}')
+        # Mapeo de la predicción a etiquetas de calidad
+        quality_mapping = {0: 'mala', 1: 'buena'}
+        prediction_label = [quality_mapping[pred] for pred in prediction]
         
-        # Devolver las predicciones como respuesta JSON
-        return jsonify({'categoria': prediction[0]})
+        # Construir el mensaje de respuesta
+        prediction_message = f"La manzana es de {prediction_label[0]} calidad"
+        
+        return jsonify({'message': prediction_message})
     except Exception as e:
-        app.logger.error(f'Error en la predicción: {str(e)}')
+        print(f"Error en la predicción: {e}")
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)
-

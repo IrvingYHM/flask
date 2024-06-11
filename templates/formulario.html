@@ -1,44 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Clasificador de Insectos</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción de calidad de manzanas</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white mt-10 mb-12 p-8 rounded-lg shadow-lg w-full max-w-2xl">
+        <h1 class="text-3xl font-bold mb-6 text-center">Predicción de calidad de manzanas</h1>
+        <form id="prediction-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 gap-x-12">
+            <div>
+                <label for="size" class="block text-lg font-bold text-gray-700">Tamaño:</label>
+                <input type="text" id="size" name="Size" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label for="weight" class="block text-lg font-bold text-gray-700">Peso:</label>
+                <input type="text" id="weight" name="Weight" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label for="sweetness" class="block text-lg font-bold text-gray-700">Dulzura:</label>
+                <input type="text" id="sweetness" name="Sweetness" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label for="crunchiness" class="block text-lg font-bold text-gray-700">Crujiente:</label>
+                <input type="text" id="crunchiness" name="Crunchiness" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label for="juiciness" class="block text-lg font-bold text-gray-700">Jugosidad:</label>
+                <input type="text" id="juiciness" name="Juiciness" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label for="ripeness" class="block text-lg font-bold text-gray-700">Madurez:</label>
+                <input type="text" id="ripeness" name="Ripeness" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label for="acidity" class="block text-lg font-bold text-gray-700">Acidez:</label>
+                <input type="text" id="acidity" name="Acidity" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+            <div class="md:col-span-2 flex justify-center">
+                <input type="submit" value="Predecir" class="w-full py-3 px-4 mx-52 text-xl bg-blue-600 text-white font-bold rounded-md shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            </div>
+        </form>
+        
+        <h2 class="text-xl font-semibold mt-6">Predicción:</h2>
+        <p id="prediction-result" class="text-lg mt-2"></p>
+    </div>
+    
     <script>
-        function clasificarInsecto(event) {
-            event.preventDefault();
-            const abdomen = document.getElementById('abdomen').value;
-            const antena = document.getElementById('antena').value;
-
-            fetch('/predict', {
+        document.getElementById('prediction-form').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const formObject = Object.fromEntries(formData.entries());
+            
+            // Convert values to appropriate types
+            for (let key in formObject) {
+                formObject[key] = [parseFloat(formObject[key])];
+            }
+            
+            const response = await fetch('/predict', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json'
                 },
-                body: `abdomen=${abdomen}&antena=${antena}`,
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById('resultado').innerText = 'Error: ' + data.error;
-                } else {
-                    document.getElementById('resultado').innerText = 'El insecto es una ' + data.categoria;
-                }
-            })
-            .catch(error => {
-                document.getElementById('resultado').innerText = 'Error en la solicitud.';
-                console.error('Error:', error);
+                body: JSON.stringify(formObject)
             });
-        }
+            
+            const result = await response.json();
+            
+            // Mostrar la predicción en el elemento <p> con id="prediction-result"
+            if (response.ok) {
+                document.getElementById('prediction-result').textContent = result.message;
+            } else {
+                document.getElementById('prediction-result').textContent = 'Error en la predicción';
+            }
+        };
     </script>
-</head>
-<body>
-    <h1>Clasificador de Insectos</h1>
-    <form id="formulario" onsubmit="clasificarInsecto(event)">
-        <label for="abdomen">Longitud del Abdomen:</label>
-        <input type="text" id="abdomen" name="abdomen"><br><br>
-        <label for="antena">Longitud de las Antenas:</label>
-        <input type="text" id="antena" name="antena"><br><br>
-        <input type="submit" value="Enviar">
-    </form>
-    <p id="resultado"></p>
 </body>
 </html>
