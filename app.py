@@ -1,12 +1,14 @@
 from flask import Flask, request, jsonify, render_template
 import joblib
 import pandas as pd
+import os
 
 app = Flask(__name__)
 
 # Cargar el modelo entrenado
+model_path = os.path.join(os.path.dirname(__file__), "Mobile_Phone_prices.pkl")
 try:
-    modelo = joblib.load("modelo_apple_quality.pkl")
+    modelo = joblib.load(model_path)
 except Exception as e:
     modelo = None
     print(f"Error al cargar el modelo: {e}")
@@ -21,19 +23,38 @@ def predict():
         return jsonify({'error': 'El modelo no está disponible.'}), 500
 
     try:
-        data = request.get_json()
+        # Obtener los datos del formulario en formato JSON
+        input_data = request.get_json()
+        if input_data is None:
+            raise ValueError("No se recibieron datos en formato JSON")
+
+        # Convertir los datos del formulario
+        title = float(input_data['title'])
+        rating = float(input_data['rating'])
+        brand = float(input_data['brand'])
+        cable = float(input_data['cable'])
+        height = float(input_data['height'])
+        storage = float(input_data['storage'])
+        
         # Crear el DataFrame con los datos recibidos
+        data = {
+            'title': [title],
+            'rating': [rating],
+            'brand': [brand],
+            'cable': [cable],
+            'height': [height],
+            'storage': [storage]
+        }
         X_test = pd.DataFrame(data)
         
         # Realizar la predicción
         prediction = modelo.predict(X_test)
         
-        # Mapeo de la predicción a etiquetas de calidad
-        quality_mapping = {0: 'mala', 1: 'buena'}
-        prediction_label = [quality_mapping[pred] for pred in prediction]
+        # Asegurarnos de que prediction sea un numpy array
+        prediction = prediction.flatten()  # Aplanamos el array si es necesario
         
         # Construir el mensaje de respuesta
-        prediction_message = f"La manzana es de {prediction_label[0]} calidad"
+        prediction_message = f"El precio estimado del teléfono móvil es: {prediction[0]:.2f}"
         
         return jsonify({'message': prediction_message})
     except Exception as e:
